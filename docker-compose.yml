@@ -1,0 +1,49 @@
+version: '3.7'
+
+networks:
+  webapp:
+    external: true
+
+x-defaults: &defaults
+  restart: ${DOCKER_RESTART_POLICY}
+
+services:
+  traefik:
+    <<: *defaults
+    image: traefik:v2.4
+    container_name: traefik
+    ports:
+      - "80:80"
+      - "443:443"
+      - "8080:8080"
+      - "12345:12345"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./traefik/traefik.yml:/etc/traefik/traefik.yml
+      - ./traefik/config.yml:/etc/traefik/config.yml
+      - ./certs:/etc/certs
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.traefik=true"
+    networks:
+      - webapp
+
+  catchall:
+    <<: *defaults
+    image: nginx:alpine
+    container_name: catchall
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=webapp"
+      - "traefik.http.routers.catchall.entrypoints=http"
+      - "traefik.http.routers.catchall.rule=HostRegexp(`{host:.+}`)"
+      - "traefik.http.routers.catchall.priority=1"
+      - "traefik.http.routers.catchall-secure.entrypoints=https"
+      - "traefik.http.routers.catchall-secure.rule=HostRegexp(`{host:.*}`)"
+      - "traefik.http.routers.catchall-secure.priority=1"
+      - "traefik.http.routers.catchall-secure.tls=true"
+    networks:
+      - webapp
+    volumes:
+      - ./catchAll/html:/usr/share/nginx/html
+      - ./catchAll/nginx:/etc/nginx/conf.d

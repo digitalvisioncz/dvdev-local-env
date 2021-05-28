@@ -1,0 +1,6 @@
+tls:
+  stores:
+    default:
+      defaultCertificate:
+        certFile: "/etc/certs/dvdev-env.pem"
+        keyFile: "/etc/certs/dvdev-env-key.pem"
