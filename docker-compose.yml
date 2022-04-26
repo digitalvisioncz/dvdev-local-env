@@ -6,7 +6,7 @@ x-defaults:
   restart: '${DOCKER_RESTART_POLICY}'
 services:
   traefik:
-    restart: '${DOCKER_RESTART_POLICY}'
+    restart: unless-stopped
     image: 'traefik:v2.4'
     container_name: traefik
     ports:
@@ -22,13 +22,13 @@ services:
     labels:
       - traefik.enable=true
       - traefik.docker.network=webapp
-      - 'traefik.http.routers.traefik-secure.service=api@internal'
+      - traefik.http.routers.traefik-secure.service=api@internal
       - 'traefik.http.routers.traefik-secure.rule=HostRegexp(`${TRAEFIK_HOST}`)'
       - 'traefik.http.routers.traefik-secure.entrypoints=http,https'
       - traefik.http.routers.traefik-secure.tls=true
-      - 'traefik.http.routers.traefik.service=api@internal'
+      - traefik.http.routers.traefik.service=api@internal
       - 'traefik.http.routers.traefik.rule=HostRegexp(`${TRAEFIK_HOST}`)'
-      - 'traefik.http.routers.traefik.entrypoints=http'
+      - traefik.http.routers.traefik.entrypoints=http
     networks:
       - webapp
   catchall:

@@ -4,6 +4,7 @@ echo """
   Install root certificates
 ==================================================
 """
+sudo apt install libnss3-tools
 mkcert --install
 
 echo """
