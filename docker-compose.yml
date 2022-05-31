@@ -1,11 +1,17 @@
 version: '3.7'
 networks:
   webapp:
-    external: true
-x-defaults:
+    name: webapp
+x-defaults: &defaults
   restart: '${DOCKER_RESTART_POLICY}'
+  logging:
+    driver: "json-file"
+    options:
+      max-file: "10"
+      max-size: "10m"
 services:
   traefik:
+    <<: *defaults
     restart: unless-stopped
     image: 'traefik:v2.4'
     container_name: traefik
@@ -32,6 +38,7 @@ services:
     networks:
       - webapp
   catchall:
+    <<: *defaults
     restart: '${DOCKER_RESTART_POLICY}'
     image: 'nginx:alpine'
     container_name: catchall
@@ -50,3 +57,28 @@ services:
     volumes:
       - './catchAll/html:/usr/share/nginx/html'
       - './catchAll/nginx:/etc/nginx/conf.d'
+
+  mailhog:
+    <<: *defaults
+    image: mailhog/mailhog:latest
+    container_name: mailhog
+    hostname: mailhog
+    environment:
+      - "MH_HOSTNAME=${MAILHOG_HOSTNAME}"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=webapp"
+      - "traefik.http.routers.mailhog.rule=Host(`${MAILHOG_HOSTNAME}`)"
+      - "traefik.http.routers.mailhog.entrypoints=http"
+      - "traefik.http.routers.mailhog.middlewares=secure-redirectscheme@file"
+      - "traefik.http.routers.mailhog-secure.rule=Host(`${MAILHOG_HOSTNAME}`)"
+      - "traefik.http.routers.mailhog-secure.entrypoints=https"
+      - "traefik.http.routers.mailhog-secure.tls=true"
+      - "traefik.http.services.mailhog.loadbalancer.server.port=8025"
+    networks:
+      - webapp
+    volumes:
+      - mailhog-data:/var/mailhog/maildir
+
+volumes:
+  mailhog-data:
